@@ -25,12 +25,12 @@ jobs:
     timeout-minutes: 60
     name: SETUP MO TEST ENV
     steps:
-      - name: Clone mo-auto-test Repo
+      - name: Clone mo-regression Repo
         uses: actions/checkout@v2
         with:
           repository: aressu1985/mo-regression
           token: ${{secrets.TOOL_REPO_TOKEN}}
-          path: ./mo-auto-test
+          path: ./mo-regression
           ref: main
 
       - name: Prepare Test EVN
@@ -45,29 +45,23 @@ jobs:
         with:
           version: 'v1.23.6'
         id: install
-           
-      - name: Prepare Kubeconfig
-        run: |
-           aws eks --region us-west-2 update-kubeconfig --name eks-ci --kubeconfig eks-ci
-           export KUBECONFIG=$(pwd)/eks-ci
-           if [ "$(kubectl get namespaces|grep mo-reg|wc -l)" -eq 0 ];then export KUBECONFIG=$(pwd)/eks-ci; kubectl create namespace mo-reg;kubectl -n mo-reg create secret generic aws-auto --from-literal=AWS_ACCESS_KEY_ID=${{ secrets.ACCESSKEY_ID }} --from-literal=AWS_SECRET_ACCESS_KEY=${{ secrets.SECRETACCESS_KEY }};fi 
-       
+
       - name: Clean EKS ENV
         run: |
-          export KUBECONFIG=$(pwd)/tke-ci
-          if [ "$(kubectl -n mo-reg get pod|grep "mo-reg-*"|wc -l)" -ne 0 ];then export KUBECONFIG=$(pwd)/eks-ci; kubectl -n mo-reg delete -f $GITHUB_WORKSPACE/mo-auto-test/mo-reg.yaml;sleep 30s;fi
+          export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config
+          if [ "$(kubectl -n mo-reg get pod|grep "mo-reg-*"|wc -l)" -ne 0 ];then export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci; kubectl -n mo-reg delete -f $GITHUB_WORKSPACE/mo-regression/mo-reg.yaml;sleep 30s;fi
 
       - name: ECHO mo-reg.yaml
         run: |
-          echo '${{ needs.docker-image-build.outputs.version }}'
-          sed -i "s/imagetag/${{ inputs.Image }}/" $GITHUB_WORKSPACE/mo-auto-test/mo-reg.yaml
-          cat $GITHUB_WORKSPACE/mo-auto-test/mo-reg.yaml 
+          echo '${{ inputs.Image }}'
+          sed -i "s/imagetag/${{ inputs.Image }}/" $GITHUB_WORKSPACE/mo-regression/mo-reg.yaml
+          cat $GITHUB_WORKSPACE/mo-regression/mo-reg.yaml 
           
       - name: Create MO Cluster
         run: |
-          export KUBECONFIG=$(pwd)/eks-ci
+          export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config
           while true; do if [ "$(kubectl -n mo-reg get pod|grep "job-bucket-*"| wc -l)" -eq 0 ]; then break; else sleep 10s; continue; fi; done
-          kubectl -n mo-reg apply -f $GITHUB_WORKSPACE/mo-auto-test/mo-reg.yaml
+          kubectl -n mo-reg apply -f $GITHUB_WORKSPACE/mo-regression/mo-reg.yaml
           sleep 100s
           while true; do if [ "$(kubectl -n mo-reg get pods --field-selector status.phase=Running|grep "mo-reg-*"|wc -l)" -eq 6 ]; then break; else sleep 10s; continue; fi; done
           kubectl -n mo-reg get pod
@@ -79,28 +73,13 @@ jobs:
     runs-on: x86-runner
     timeout-minutes: 30
     needs: [setup_mo_test_env]
-    steps:        
-      - name: Prepare AWS Tools
-        run: |
-          sudo apt-get update && sudo apt-get install awscli -y 
-          sudo apt-get install -y ca-certificates curl
-          
-      - name: Prepare AWS Kubectl
+    steps:
+      - name: Prepare Kubectl
         uses: azure/setup-kubectl@v3
         with:
           version: 'v1.23.6'
         id: install
-                   
-      - name: Prepare AWS Config
-        run: |
-           aws configure<<EOF
-           ${{ secrets.ACCESSKEY_ID }}
-           ${{ secrets.SECRETACCESS_KEY }}
-           us-west-2
-           json
-           exit
-           EOF 
-           
+
       - name: Set up JDK 8 for x64
         uses: actions/setup-java@v3
         with:
@@ -129,8 +108,7 @@ jobs:
           
       - name: alter mo-tester addr   
         run: |
-           aws eks --region us-west-2 update-kubeconfig --name eks-ci --kubeconfig eks-ci
-           export KUBECONFIG=$(pwd)/eks-ci
+           export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci
            export add_ip=$(kubectl -n mo-reg get svc | grep "6001/TCP"|awk '{print $3}')
            sed -i "s/127.0.0.1:6001/${add_ip}:6001/" $GITHUB_WORKSPACE/mo-tester/mo.yml
            sed -i "s/60000/300000/" $GITHUB_WORKSPACE/mo-tester/mo.yml
@@ -138,8 +116,7 @@ jobs:
           
       - name: cn-0 pod prepare data
         run: |
-            aws eks --region us-west-2 update-kubeconfig --name eks-ci --kubeconfig eks-ci
-            export KUBECONFIG=$(pwd)/eks-ci
+            export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci
             tp_cn_0_pod=$(kubectl -n mo-reg get pod -l matrixorigin.io/component=CNSet -o wide| awk 'NR==2 {print $1}')
             kubectl exec -it ${tp_cn_0_pod} -n mo-reg -- /bin/sh<<EOF
             apt-get update
@@ -153,8 +130,7 @@ jobs:
            
       - name: cn-1 pod prepare data
         run: |
-            aws eks --region us-west-2 update-kubeconfig --name eks-ci --kubeconfig eks-ci
-            export KUBECONFIG=$(pwd)/eks-ci
+            export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci
             tp_cn_1_pod=$(kubectl -n mo-reg get pod -l matrixorigin.io/component=CNSet -o wide| awk 'NR==3 {print $1}')
             kubectl exec -it ${tp_cn_1_pod} -n mo-reg -- /bin/sh<<EOF
             apt-get update
@@ -196,12 +172,12 @@ jobs:
           path: ./mo-load-data
           ref: main
 
-      - name: Clone mo-auto-test Repo
+      - name: Clone mo-regression Repo
         uses: actions/checkout@v2
         with:
-          repository: matrixorigin/mo-auto-test
+          repository: aressu1985/mo-regression
           token: ${{secrets.TOOL_REPO_TOKEN}}
-          path: ./mo-auto-test
+          path: ./mo-regression
           ref: main
 
       - name: Prepare Test EVN
@@ -212,37 +188,21 @@ jobs:
           sudo pip3 install shyaml==0.6.2
           sudo pip3 install PyMySQL==1.0.2
 
-      - name: Prepare AWS Tools
-        run: |
-          sudo apt-get update && sudo apt-get install awscli -y 
-          sudo apt-get install -y ca-certificates curl
-
-      - name: Prepare AWS Kubectl
+      - name: Prepare Kubectl
         uses: azure/setup-kubectl@v3
         with:
           version: 'v1.23.6'
         id: install
 
-      - name: Prepare AWS Config
-        run: |
-           aws configure<<EOF
-           ${{ secrets.ACCESSKEY_ID }}
-           ${{ secrets.SECRETACCESS_KEY }}
-           us-west-2
-           json
-           exit
-           EOF
-
       - name: Prepare Kubeconfig
         run: |
-           aws eks --region us-west-2 update-kubeconfig --name eks-ci --kubeconfig eks-ci
-           export KUBECONFIG=$(pwd)/eks-ci
-           if [ "$(kubectl get namespaces|grep mo-reg|wc -l)" -eq 0 ];then export KUBECONFIG=$(pwd)/eks-ci; kubectl create namespace mo-reg;kubectl -n mo-reg create secret generic aws-regression --from-literal=AWS_ACCESS_KEY_ID=${{ secrets.ACCESSKEY_ID }} --from-literal=AWS_SECRET_ACCESS_KEY=${{ secrets.SECRETACCESS_KEY }};fi 
+           export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci
+           if [ "$(kubectl get namespaces|grep mo-reg|wc -l)" -eq 0 ];then export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci; kubectl create namespace mo-reg;kubectl -n mo-reg create secret generic aws-regression --from-literal=AWS_ACCESS_KEY_ID=${{ secrets.ACCESSKEY_ID }} --from-literal=AWS_SECRET_ACCESS_KEY=${{ secrets.SECRETACCESS_KEY }};fi 
 
       - name: Get MO Cluster Addr
         id: get_mo_addr
         run: |
-          export KUBECONFIG=$(pwd)/eks-ci
+          export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci
           mo_svc_ip=$(kubectl -n mo-reg get svc | grep "6001/TCP"|awk '{print $3}')
           echo $mo_svc_ip
           echo ::set-output name=mo_svc_ip::${mo_svc_ip}
@@ -289,9 +249,9 @@ jobs:
       - name: Clone mo-autotest Repo
         uses: actions/checkout@v2
         with:
-          repository: matrixorigin/mo-auto-test
+          repository: aressu1985/mo-regression
           token: ${{secrets.TOOL_REPO_TOKEN}}
-          path: ./mo-auto-test
+          path: ./mo-regression
           ref: main
 
       - name: Prepare Test EVN
@@ -302,37 +262,21 @@ jobs:
           sudo pip3 install shyaml==0.6.2
           sudo pip3 install PyMySQL==1.0.2
 
-      - name: Prepare AWS Tools
-        run: |
-          sudo apt-get update && sudo apt-get install awscli -y 
-          sudo apt-get install -y ca-certificates curl
-
-      - name: Prepare AWS Kubectl
+      - name: Prepare Kubectl
         uses: azure/setup-kubectl@v3
         with:
           version: 'v1.23.6'
         id: install
 
-      - name: Prepare AWS Config
-        run: |
-           aws configure<<EOF
-           ${{ secrets.ACCESSKEY_ID }}
-           ${{ secrets.SECRETACCESS_KEY }}
-           us-west-2
-           json
-           exit
-           EOF
-
       - name: Prepare Kubeconfig
         run: |
-           aws eks --region us-west-2 update-kubeconfig --name eks-ci --kubeconfig eks-ci
-           export KUBECONFIG=$(pwd)/eks-ci
-           if [ "$(kubectl get namespaces|grep mo-reg|wc -l)" -eq 0 ];then export KUBECONFIG=$(pwd)/eks-ci; kubectl create namespace mo-reg;kubectl -n mo-reg create secret generic aws-regression --from-literal=AWS_ACCESS_KEY_ID=${{ secrets.ACCESSKEY_ID }} --from-literal=AWS_SECRET_ACCESS_KEY=${{ secrets.SECRETACCESS_KEY }};fi 
+           export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci
+           if [ "$(kubectl get namespaces|grep mo-reg|wc -l)" -eq 0 ];then export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci; kubectl create namespace mo-reg;kubectl -n mo-reg create secret generic aws-regression --from-literal=AWS_ACCESS_KEY_ID=${{ secrets.ACCESSKEY_ID }} --from-literal=AWS_SECRET_ACCESS_KEY=${{ secrets.SECRETACCESS_KEY }};fi 
 
       - name: Get MO Cluster Addr
         id: get_mo_addr
         run: |
-          export KUBECONFIG=$(pwd)/eks-ci
+          export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci
           mo_svc_ip=$(kubectl -n mo-reg get svc | grep "6001/TCP"|awk '{print $3}')
           echo $mo_svc_ip
           echo ::set-output name=mo_svc_ip::${mo_svc_ip}
@@ -379,42 +323,26 @@ jobs:
       - name: Clone mo-autotest Repo
         uses: actions/checkout@v2
         with:
-          repository: matrixorigin/mo-auto-test
+          repository: aressu1985/mo-regression
           token: ${{secrets.TOOL_REPO_TOKEN}}
-          path: ./mo-auto-test
+          path: ./mo-regression
           ref: main
 
-      - name: Prepare AWS Tools
-        run: |
-          sudo apt-get update && sudo apt-get install awscli -y 
-          sudo apt-get install -y ca-certificates curl
-
-      - name: Prepare AWS Kubectl
+      - name: Prepare Kubectl
         uses: azure/setup-kubectl@v3
         with:
           version: 'v1.23.6'
         id: install
 
-      - name: Prepare AWS Config
-        run: |
-          aws configure<<EOF
-          ${{ secrets.ACCESSKEY_ID }}
-          ${{ secrets.SECRETACCESS_KEY }}
-          us-west-2
-          json
-          exit
-          EOF
-
       - name: Prepare Kubeconfig
         run: |
-          aws eks --region us-west-2 update-kubeconfig --name eks-ci --kubeconfig eks-ci
-          export KUBECONFIG=$(pwd)/eks-ci
-          if [ "$(kubectl get namespaces|grep mo-reg|wc -l)" -eq 0 ];then export KUBECONFIG=$(pwd)/eks-ci; kubectl create namespace mo-reg;kubectl -n mo-reg create secret generic aws-regression --from-literal=AWS_ACCESS_KEY_ID=${{ secrets.ACCESSKEY_ID }} --from-literal=AWS_SECRET_ACCESS_KEY=${{ secrets.SECRETACCESS_KEY }};fi 
+          export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci
+          if [ "$(kubectl get namespaces|grep mo-reg|wc -l)" -eq 0 ];then export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci; kubectl create namespace mo-reg;kubectl -n mo-reg create secret generic aws-regression --from-literal=AWS_ACCESS_KEY_ID=${{ secrets.ACCESSKEY_ID }} --from-literal=AWS_SECRET_ACCESS_KEY=${{ secrets.SECRETACCESS_KEY }};fi 
 
       - name: Get MO Cluster Addr
         id: get_mo_addr
         run: |
-          export KUBECONFIG=$(pwd)/eks-ci
+          export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci
           mo_svc_ip=$(kubectl -n mo-reg get svc | grep "6001/TCP"|awk '{print $3}')
           echo $mo_svc_ip
           echo ::set-output name=mo_svc_ip::${mo_svc_ip}
@@ -508,9 +436,9 @@ jobs:
       - name: Clone mo-autotest Repo
         uses: actions/checkout@v2
         with:
-          repository: matrixorigin/mo-auto-test
+          repository: aressu1985/mo-regression
           token: ${{secrets.TOOL_REPO_TOKEN}}
-          path: ./mo-auto-test
+          path: ./mo-regression
           ref: main
 
       - name: Prepare Test EVN
@@ -521,37 +449,21 @@ jobs:
           sudo pip3 install shyaml==0.6.2
           sudo pip3 install PyMySQL==1.0.2
 
-      - name: Prepare AWS Tools
-        run: |
-          sudo apt-get update && sudo apt-get install awscli -y 
-          sudo apt-get install -y ca-certificates curl
-
-      - name: Prepare AWS Kubectl
+      - name: Prepare Kubectl
         uses: azure/setup-kubectl@v3
         with:
           version: 'v1.23.6'
         id: install
 
-      - name: Prepare AWS Config
-        run: |
-           aws configure<<EOF
-           ${{ secrets.ACCESSKEY_ID }}
-           ${{ secrets.SECRETACCESS_KEY }}
-           us-west-2
-           json
-           exit
-           EOF
-
       - name: Prepare Kubeconfig
         run: |
-           aws eks --region us-west-2 update-kubeconfig --name eks-ci --kubeconfig eks-ci
-           export KUBECONFIG=$(pwd)/eks-ci
-           if [ "$(kubectl get namespaces|grep mo-reg|wc -l)" -eq 0 ];then export KUBECONFIG=$(pwd)/eks-ci; kubectl create namespace mo-reg;kubectl -n mo-reg create secret generic aws-regression --from-literal=AWS_ACCESS_KEY_ID=${{ secrets.ACCESSKEY_ID }} --from-literal=AWS_SECRET_ACCESS_KEY=${{ secrets.SECRETACCESS_KEY }};fi 
+           export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci
+           if [ "$(kubectl get namespaces|grep mo-reg|wc -l)" -eq 0 ];then export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci; kubectl create namespace mo-reg;kubectl -n mo-reg create secret generic aws-regression --from-literal=AWS_ACCESS_KEY_ID=${{ secrets.ACCESSKEY_ID }} --from-literal=AWS_SECRET_ACCESS_KEY=${{ secrets.SECRETACCESS_KEY }};fi 
 
       - name: Get MO Cluster Addr
         id: get_mo_addr
         run: |
-          export KUBECONFIG=$(pwd)/eks-ci
+          export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci
           mo_svc_ip=$(kubectl -n mo-reg get svc | grep "6001/TCP"|awk '{print $3}')
           echo $mo_svc_ip
           echo ::set-output name=mo_svc_ip::${mo_svc_ip}
@@ -628,9 +540,9 @@ jobs:
       - name: Clone mo-autotest Repo
         uses: actions/checkout@v2
         with:
-          repository: matrixorigin/mo-auto-test
+          repository: aressu1985/mo-regression
           token: ${{secrets.TOOL_REPO_TOKEN}}
-          path: ./mo-auto-test
+          path: ./mo-regression
           ref: main
 
       - name: Prepare Test EVN
@@ -641,37 +553,21 @@ jobs:
           sudo pip3 install shyaml==0.6.2
           sudo pip3 install PyMySQL==1.0.2
 
-      - name: Prepare AWS Tools
-        run: |
-          sudo apt-get update && sudo apt-get install awscli -y 
-          sudo apt-get install -y ca-certificates curl
-
-      - name: Prepare AWS Kubectl
+      - name: Prepare Kubectl
         uses: azure/setup-kubectl@v3
         with:
           version: 'v1.23.6'
         id: install
 
-      - name: Prepare AWS Config
-        run: |
-           aws configure<<EOF
-           ${{ secrets.ACCESSKEY_ID }}
-           ${{ secrets.SECRETACCESS_KEY }}
-           us-west-2
-           json
-           exit
-           EOF
-
       - name: Prepare Kubeconfig
         run: |
-           aws eks --region us-west-2 update-kubeconfig --name eks-ci --kubeconfig eks-ci
-           export KUBECONFIG=$(pwd)/eks-ci
-           if [ "$(kubectl get namespaces|grep mo-reg|wc -l)" -eq 0 ];then export KUBECONFIG=$(pwd)/eks-ci; kubectl create namespace mo-reg;kubectl -n mo-reg create secret generic aws-regression --from-literal=AWS_ACCESS_KEY_ID=${{ secrets.ACCESSKEY_ID }} --from-literal=AWS_SECRET_ACCESS_KEY=${{ secrets.SECRETACCESS_KEY }};fi 
+           export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci
+           if [ "$(kubectl get namespaces|grep mo-reg|wc -l)" -eq 0 ];then export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci; kubectl create namespace mo-reg;kubectl -n mo-reg create secret generic aws-regression --from-literal=AWS_ACCESS_KEY_ID=${{ secrets.ACCESSKEY_ID }} --from-literal=AWS_SECRET_ACCESS_KEY=${{ secrets.SECRETACCESS_KEY }};fi 
 
       - name: Get MO Cluster Addr
         id: get_mo_addr
         run: |
-          export KUBECONFIG=$(pwd)/eks-ci
+          export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci
           mo_svc_ip=$(kubectl -n mo-reg get svc | grep "6001/TCP"|awk '{print $3}')
           echo $mo_svc_ip
           echo ::set-output name=mo_svc_ip::${mo_svc_ip}
