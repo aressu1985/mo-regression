@@ -28,7 +28,7 @@ jobs:
       - name: Clone mo-auto-test Repo
         uses: actions/checkout@v2
         with:
-          repository: matrixorigin/mo-auto-test
+          repository: aressu1985/mo-regression
           token: ${{secrets.TOOL_REPO_TOKEN}}
           path: ./mo-auto-test
           ref: main
