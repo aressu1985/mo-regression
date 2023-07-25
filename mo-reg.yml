@@ -1,8 +1,8 @@
 apiVersion: core.matrixorigin.io/v1alpha1
 kind: MatrixOneCluster
 metadata:
-  name: nightly-regression-dis
-  namespace: mo-nightly-regression
+  name: mo-reg
+  namespace: mo-reg
 spec:
   dn:
     nodeSelector:
