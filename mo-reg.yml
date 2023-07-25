@@ -1,0 +1,105 @@
+apiVersion: core.matrixorigin.io/v1alpha1
+kind: MatrixOneCluster
+metadata:
+  name: nightly-regression-dis
+  namespace: mo-nightly-regression
+spec:
+  dn:
+    nodeSelector:
+      dn: dn
+    cacheVolume:
+      size: 50Gi
+      storageClassName: cbs-csi-hssd
+    sharedStorageCache:
+      memoryCacheSize: 5Gi
+      diskCacheSize: 50Gi
+    config: |
+      [dn.Txn.Storage]
+      backend = "TAE"
+      log-backend = "logservice"
+      [log]
+      level = "info"
+      format = "json"
+      max-size = 512
+      [dn.Ckp]
+      flush-interval = "60s"
+      min-count = 100
+      scan-interval = "5s"
+      incremental-interval = "60s"
+      global-interval = "100000s"
+      [dn.LogtailServer]
+      rpc-max-message-size = "16KiB"
+      rpc-payload-copy-buffer-size = "16KiB"
+      rpc-enable-checksum = true
+      logtail-collect-interval = "2ms"
+      logtail-response-send-timeout = "10s"
+      max-logtail-fetch-failure = 5
+    replicas: 1
+    resources:
+      requests:
+        cpu: 12
+        memory: 50Gi
+      limits:
+        cpu: 16
+        memory: 64Gi
+  imageRepository: matrixorigin/matrixone-dev
+  imagePullPolicy: IfNotPresent
+  logService:
+    nodeSelector:
+      log: log
+    replicas: 3
+    resources:
+      requests:
+        cpu: 1
+        memory: 6Gi
+    sharedStorage:
+      s3:
+        endpoint: https://cos.ap-chengdu.myqcloud.com
+        region: ap-chengdu
+        path: mo-nightly-regression-1308875761/mo-benchmark/
+        s3RetentionPolicy: Delete
+        secretRef:
+          name: tke-regression
+    pvcRetentionPolicy: Delete
+    volume:
+      size: 100Gi
+      storageClassName: cbs-csi-hssd
+    config: |
+      [log]
+      level = "info"
+      format = "json"
+      max-size = 512
+  tp:
+    nodeSelector:
+      cn: cn
+    overlay:
+      env:
+      - name: GOMEMLIMIT
+        value: "50000MiB"
+    cacheVolume:
+      size: 250Gi
+      storageClassName: cbs-csi-hssd
+    sharedStorageCache:
+      memoryCacheSize: 12Gi
+      diskCacheSize: 250Gi
+    config: |
+      [cn.Engine]
+      type = "distributed-tae"
+      [log]
+      level = "info"
+      format = "json"
+      max-size = 512
+      [cn]
+      turn-on-push-model = true
+      [cn.txn]
+      enable-sacrificing-freshness = 1
+      enable-cn-based-consistency = 0
+    replicas: 3
+    resources:
+      requests:
+        cpu: 12
+        memory: 50Gi
+      limits:
+        cpu: 16
+        memory: 64Gi
+  version: test1-ba348e82a
