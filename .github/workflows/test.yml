@@ -21,7 +21,7 @@ on:
 
 jobs:
   setup_mo_test_env:
-    runs-on: x86-runner
+    runs-on: self-hosted
     timeout-minutes: 60
     name: SETUP MO TEST ENV
     steps:
@@ -40,6 +40,11 @@ jobs:
           sudo pip3 install PyYAML==6.0
           sudo pip3 install shyaml==0.6.2
 
+      - name: Prepare Kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.23.6'
+        id: install
            
       - name: Prepare Kubeconfig
         run: |
@@ -49,10 +54,8 @@ jobs:
        
       - name: Clean EKS ENV
         run: |
-          export KUBECONFIG=$(pwd)/eks-ci
+          export KUBECONFIG=$(pwd)/tke-ci
           if [ "$(kubectl -n mo-reg get pod|grep "mo-reg-*"|wc -l)" -ne 0 ];then export KUBECONFIG=$(pwd)/eks-ci; kubectl -n mo-reg delete -f $GITHUB_WORKSPACE/mo-auto-test/mo-reg.yaml;sleep 30s;fi
-          aws s3 rm s3://mo-ares/mo-reg/data --recursive > /dev/null 2>&1
-          aws s3 rm s3://mo-ares/mo-reg/etl --recursive > /dev/null 2>&1
 
       - name: ECHO mo-reg.yaml
         run: |
