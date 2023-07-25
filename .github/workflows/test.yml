@@ -36,15 +36,12 @@ jobs:
       - name: Prepare Test EVN
         run: |
           sudo apt-get update
-          sudo apt-get install git vim net-tools mysql-client openjdk-8-jdk sysbench bc pip -y
+          sudo apt-get install git curl ca-certificates net-tools mysql-client openjdk-8-jdk sysbench bc pip -y
+          curl -k https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg | sudo apt-key add -
+          sudo apt-add-repository "deb https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main" -y
+          sudo apt install -y  kubectl
           sudo pip3 install PyYAML==6.0
           sudo pip3 install shyaml==0.6.2
-
-      - name: Prepare Kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'v1.23.6'
-        id: install
 
       - name: Clean EKS ENV
         run: |
@@ -183,16 +180,12 @@ jobs:
       - name: Prepare Test EVN
         run: |
           sudo apt-get update
-          sudo apt-get install git vim net-tools mysql-client openjdk-8-jdk sysbench bc pip -y
+          sudo apt-get install git curl ca-certificates net-tools mysql-client openjdk-8-jdk sysbench bc pip -y
+          curl -k https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg | sudo apt-key add -
+          sudo apt-add-repository "deb https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main" -y
+          sudo apt install -y  kubectl
           sudo pip3 install PyYAML==6.0
           sudo pip3 install shyaml==0.6.2
-          sudo pip3 install PyMySQL==1.0.2
-
-      - name: Prepare Kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'v1.23.6'
-        id: install
 
       - name: Prepare Kubeconfig
         run: |
@@ -257,16 +250,12 @@ jobs:
       - name: Prepare Test EVN
         run: |
           sudo apt-get update
-          sudo apt-get install git vim net-tools mysql-client openjdk-8-jdk sysbench bc pip -y
+          sudo apt-get install git curl ca-certificates net-tools mysql-client openjdk-8-jdk sysbench bc pip -y
+          curl -k https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg | sudo apt-key add -
+          sudo apt-add-repository "deb https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main" -y
+          sudo apt install -y  kubectl
           sudo pip3 install PyYAML==6.0
           sudo pip3 install shyaml==0.6.2
-          sudo pip3 install PyMySQL==1.0.2
-
-      - name: Prepare Kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'v1.23.6'
-        id: install
 
       - name: Prepare Kubeconfig
         run: |
@@ -328,11 +317,18 @@ jobs:
           path: ./mo-regression
           ref: main
 
-      - name: Prepare Kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'v1.23.6'
-        id: install
+      - name: Prepare Test EVN
+        run: |
+          sudo apt-get update
+          sudo apt-get install git curl ca-certificates net-tools mysql-client openjdk-8-jdk sysbench bc pip -y
+          curl -k https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg | sudo apt-key add -
+          sudo apt-add-repository "deb https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main" -y
+          sudo apt install -y  kubectl
+          sudo pip3 install PyYAML==6.0
+          sudo pip3 install shyaml==0.6.2
+          
+          cd $GITHUB_WORKSPACE/mo-load
+          sed -i 's/127.0.0.1/${{ steps.get_mo_addr.outputs.mo_svc_ip }}/g' mo.yml
 
       - name: Prepare Kubeconfig
         run: |
@@ -346,17 +342,6 @@ jobs:
           mo_svc_ip=$(kubectl -n mo-reg get svc | grep "6001/TCP"|awk '{print $3}')
           echo $mo_svc_ip
           echo ::set-output name=mo_svc_ip::${mo_svc_ip}
-
-      - name: Prepare Test EVN
-        run: |
-          sudo apt-get update
-          sudo apt-get install git vim net-tools mysql-client openjdk-8-jdk sysbench bc pip -y
-          sudo pip3 install PyYAML==6.0
-          sudo pip3 install shyaml==0.6.2
-          sudo pip3 install PyMySQL==1.0.2
-          
-          cd $GITHUB_WORKSPACE/mo-load
-          sed -i 's/127.0.0.1/${{ steps.get_mo_addr.outputs.mo_svc_ip }}/g' mo.yml
 
       - name: Start OLTP Point Select Test With 100 Threads
         if: ${{ always() && !cancelled() }}
@@ -444,16 +429,12 @@ jobs:
       - name: Prepare Test EVN
         run: |
           sudo apt-get update
-          sudo apt-get install git vim net-tools mysql-client openjdk-8-jdk sysbench bc pip -y
+          sudo apt-get install git curl ca-certificates net-tools mysql-client openjdk-8-jdk sysbench bc pip -y
+          curl -k https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg | sudo apt-key add -
+          sudo apt-add-repository "deb https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main" -y
+          sudo apt install -y  kubectl
           sudo pip3 install PyYAML==6.0
           sudo pip3 install shyaml==0.6.2
-          sudo pip3 install PyMySQL==1.0.2
-
-      - name: Prepare Kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'v1.23.6'
-        id: install
 
       - name: Prepare Kubeconfig
         run: |
@@ -548,16 +529,12 @@ jobs:
       - name: Prepare Test EVN
         run: |
           sudo apt-get update
-          sudo apt-get install git vim net-tools mysql-client openjdk-8-jdk sysbench bc pip -y
+          sudo apt-get install git curl ca-certificates net-tools mysql-client openjdk-8-jdk sysbench bc pip -y
+          curl -k https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg | sudo apt-key add -
+          sudo apt-add-repository "deb https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main" -y
+          sudo apt install -y  kubectl
           sudo pip3 install PyYAML==6.0
           sudo pip3 install shyaml==0.6.2
-          sudo pip3 install PyMySQL==1.0.2
-
-      - name: Prepare Kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'v1.23.6'
-        id: install
 
       - name: Prepare Kubeconfig
         run: |
