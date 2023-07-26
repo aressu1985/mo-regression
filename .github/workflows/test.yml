@@ -60,14 +60,14 @@ jobs:
           while true; do if [ "$(kubectl -n mo-reg get pod|grep "job-bucket-*"| wc -l)" -eq 0 ]; then break; else sleep 10s; continue; fi; done
           kubectl -n mo-reg apply -f $GITHUB_WORKSPACE/mo-regression/mo-reg.yaml
           sleep 100s
-          while true; do if [ "$(kubectl -n mo-reg get pods --field-selector status.phase=Running|grep "mo-reg-*"|wc -l)" -eq 6 ]; then break; else sleep 10s; continue; fi; done
+          while true; do if [ "$(kubectl -n mo-reg get pods --field-selector status.phase=Running|grep "mo-reg-*"|wc -l)" -eq 7 ]; then break; else sleep 10s; continue; fi; done
           kubectl -n mo-reg get pod
           if [ ! -d $GITHUB_WORKSPACE/mo-server-log ]; then mkdir $GITHUB_WORKSPACE/mo-server-log;fi;
 
   build_verification_test:
     if: ${{ always() && !cancelled() }}
     name: Build Verification Test
-    runs-on: x86-runner
+    runs-on: self-hosted
     timeout-minutes: 30
     needs: [setup_mo_test_env]
     steps:
@@ -149,7 +149,7 @@ jobs:
   ssb_benchmark_test:
     if: ${{ always() && !cancelled() }}
     name: SSB BENCHMARK TEST
-    runs-on: x86-runner
+    runs-on: self-hosted
     timeout-minutes: 30
     needs: [setup_mo_test_env,build_verification_test]
     steps:
@@ -219,7 +219,7 @@ jobs:
   tpch_benchmark_test:
     if: ${{ always() && !cancelled() }}
     name: TPCH BENCHMARK TEST
-    runs-on: x86-runner
+    runs-on: self-hosted
     timeout-minutes: 30
     needs: [setup_mo_test_env,build_verification_test,ssb_benchmark_test]
     steps:
@@ -289,7 +289,7 @@ jobs:
   oltp_all_test:
     if: ${{ always() && !cancelled() }}
     name: SYSBENCH OLTP TEST
-    runs-on: x86-runner
+    runs-on: self-hosted
     timeout-minutes: 30
     needs: [setup_mo_test_env,build_verification_test,ssb_benchmark_test,tpch_benchmark_test]
     steps:
@@ -398,7 +398,7 @@ jobs:
   tpcc_benchmark_test:
     if: ${{ always() && !cancelled() }}
     name: TPCC BENCHMARK TEST
-    runs-on: x86-runner
+    runs-on: self-hosted
     timeout-minutes: 30
     needs: [setup_mo_test_env,build_verification_test,ssb_benchmark_test,tpch_benchmark_test,oltp_all_test]
     steps:
@@ -506,7 +506,7 @@ jobs:
   load_data_test:
     if: ${{ always() && !cancelled() }}
     name: LOAD DATA TEST
-    runs-on: x86-runner
+    runs-on: self-hosted
     timeout-minutes: 30
     needs: [setup_mo_test_env,build_verification_test,ssb_benchmark_test,tpch_benchmark_test,oltp_all_test,tpcc_benchmark_test]
     steps:
