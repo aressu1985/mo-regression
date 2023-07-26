@@ -81,7 +81,7 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE
           mkdir heads
-      
+
   ssb_benchmark_test:
     if: ${{ always() && !cancelled() }}
     name: SSB BENCHMARK TEST
@@ -142,6 +142,9 @@ jobs:
           export LC_ALL="C.UTF-8"
           locale
           cd $GITHUB_WORKSPACE/mo-load-data
+          sed -i '/.*ENDPOINT: ""*/c\ENDPOINT: "${{secrets.COS_ENDPOINT}}"' access.yml
+          sed -i '/.*ACCESS_KEY_ID: ""*/c\ACCESS_KEY_ID: "${{secrets.COS_ACCESS_KEY_ID}}"' access.yml
+          sed -i '/.*SECRET_ACCESS_KEY: ""*/c\ENDPOINT: "${{secrets.COS_SECRET_ACCESS_KEY}}"' access.yml
           ./load.sh -h ${{ steps.get_mo_addr.outputs.mo_svc_ip }} -c cases/00_from_s3/ssb_10 -r -m -g
           sleep 180s
 
@@ -212,6 +215,9 @@ jobs:
           export LC_ALL="C.UTF-8"
           locale
           cd $GITHUB_WORKSPACE/mo-load-data
+          sed -i '/.*ENDPOINT: ""*/c\ENDPOINT: "${{secrets.COS_ENDPOINT}}"' access.yml
+          sed -i '/.*ACCESS_KEY_ID: ""*/c\ACCESS_KEY_ID: "${{secrets.COS_ACCESS_KEY_ID}}"' access.yml
+          sed -i '/.*SECRET_ACCESS_KEY: ""*/c\ENDPOINT: "${{secrets.COS_SECRET_ACCESS_KEY}}"' access.yml
           ./load.sh -h ${{ steps.get_mo_addr.outputs.mo_svc_ip }} -c cases/00_from_s3/tpch_10 -r -m -g
           sleep 180s
 
@@ -262,9 +268,6 @@ jobs:
           sudo apt install -y  kubectl
           sudo pip3 install PyYAML==6.0
           sudo pip3 install shyaml==0.6.2
-          
-          cd $GITHUB_WORKSPACE/mo-load
-          sed -i 's/127.0.0.1/${{ steps.get_mo_addr.outputs.mo_svc_ip }}/g' mo.yml
 
       - name: Prepare Kubeconfig
         run: |
@@ -285,6 +288,8 @@ jobs:
           export LC_ALL="C.UTF-8"
           locale
           cd $GITHUB_WORKSPACE/mo-load
+          sed -i 's/127.0.0.1/${{ steps.get_mo_addr.outputs.mo_svc_ip }}/g' mo.yml
+          
           echo 'Start Prepare Data of 10-tables-100000-per-table'
           ./start.sh -m SYSBENCH -n 10 -s 100000
           sleep 10
@@ -391,6 +396,9 @@ jobs:
           export LC_ALL="C.UTF-8"
           locale
           cd $GITHUB_WORKSPACE/mo-load-data
+          sed -i '/.*ENDPOINT: ""*/c\ENDPOINT: "${{secrets.COS_ENDPOINT}}"' access.yml
+          sed -i '/.*ACCESS_KEY_ID: ""*/c\ACCESS_KEY_ID: "${{secrets.COS_ACCESS_KEY_ID}}"' access.yml
+          sed -i '/.*SECRET_ACCESS_KEY: ""*/c\ENDPOINT: "${{secrets.COS_SECRET_ACCESS_KEY}}"' access.yml
           ./load.sh -h ${{ steps.get_mo_addr.outputs.mo_svc_ip }} -c cases/00_from_s3/tpcc_10 -r -m -g
 
       - name: Start TPCC 10 Warehouses 10 terminals Test
@@ -491,4 +499,8 @@ jobs:
           export LC_ALL="C.UTF-8"
           echo mo_svc_ip=${{ steps.get_mo_addr.outputs.mo_svc_ip }}
           cd $GITHUB_WORKSPACE/mo-load-data
+          sed -i '/.*ENDPOINT: ""*/c\ENDPOINT: "${{secrets.COS_ENDPOINT}}"' access.yml
+          sed -i '/.*ACCESS_KEY_ID: ""*/c\ACCESS_KEY_ID: "${{secrets.COS_ACCESS_KEY_ID}}"' access.yml
+          sed -i '/.*SECRET_ACCESS_KEY: ""*/c\ENDPOINT: "${{secrets.COS_SECRET_ACCESS_KEY}}"' access.yml
+          
           ./load.sh -h ${{ steps.get_mo_addr.outputs.mo_svc_ip }} -c cases/00_from_s3/20_columns/ -r -m -g
