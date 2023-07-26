@@ -35,6 +35,9 @@ jobs:
 
       - name: Prepare Test EVN
         run: |
+          sudo rm -rf /etc/apt/sources.list
+          sudo wget -O /etc/apt/sources.list http://mirrors.cloud.tencent.com/repo/ubuntu20_sources.list
+          sudo apt-get clean all
           sudo apt-get update
           sudo apt-get install git curl ca-certificates net-tools mysql-client openjdk-8-jdk sysbench bc pip -y
           curl -k https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg | sudo apt-key add -
@@ -57,6 +60,7 @@ jobs:
       - name: Create MO Cluster
         run: |
           export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config
+          kubectl create ns mo-reg
           while true; do if [ "$(kubectl -n mo-reg get pod|grep "job-bucket-*"| wc -l)" -eq 0 ]; then break; else sleep 10s; continue; fi; done
           kubectl -n mo-reg apply -f $GITHUB_WORKSPACE/mo-regression/mo-reg.yaml
           sleep 100s
