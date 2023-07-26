@@ -60,7 +60,9 @@ jobs:
       - name: Create MO Cluster
         run: |
           export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config
-          kubectl create ns mo-reg
+          if [ "$(kubectl get ns | grep mo-reg | wc -l)" -eq 0 ]; then
+            kubectl create ns mo-reg
+          fi
           while true; do if [ "$(kubectl -n mo-reg get pod|grep "job-bucket-*"| wc -l)" -eq 0 ]; then break; else sleep 10s; continue; fi; done
           kubectl -n mo-reg apply -f $GITHUB_WORKSPACE/mo-regression/mo-reg.yaml
           sleep 100s
