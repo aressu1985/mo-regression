@@ -77,81 +77,11 @@ jobs:
     timeout-minutes: 30
     needs: [setup_mo_test_env]
     steps:
-      - name: Prepare Kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'v1.23.6'
-        id: install
-
-      - name: Set up JDK 8 for x64
-        uses: actions/setup-java@v3
-        with:
-          java-version: '8'
-          distribution: 'adopt'
-          architecture: x64  
-      
       - name: prepare env
         run: |
           cd $GITHUB_WORKSPACE
           mkdir heads
       
-      - name: clone ${{ inputs.Repo }} repo
-        uses: actions/checkout@v2
-        with:
-          repository: ${{ inputs.Repo }}
-          path: ./heads/${{ inputs.Repo }}
-          ref: ${{ inputs.Ref }}
-          
-      - name: clone mo-tester repo
-        uses: actions/checkout@v2
-        with:
-          repository: matrixorigin/mo-tester
-          path: ./mo-tester
-          ref: main    
-          
-      - name: alter mo-tester addr   
-        run: |
-           export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config
-           export add_ip=$(kubectl -n mo-reg get svc | grep "6001/TCP"|awk '{print $3}')
-           sed -i "s/127.0.0.1:6001/${add_ip}:6001/" $GITHUB_WORKSPACE/mo-tester/mo.yml
-           sed -i "s/60000/300000/" $GITHUB_WORKSPACE/mo-tester/mo.yml
-           cat $GITHUB_WORKSPACE/mo-tester/mo.yml    
-          
-      - name: cn-0 pod prepare data
-        run: |
-            export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config
-            tp_cn_0_pod=$(kubectl -n mo-reg get pod -l matrixorigin.io/component=CNSet -o wide| awk 'NR==2 {print $1}')
-            kubectl exec -it ${tp_cn_0_pod} -n mo-reg -- /bin/sh<<EOF
-            apt-get update
-            apt-get install git vim net-tools mysql-client openjdk-8-jdk -y
-            git clone https://github.com/${{ inputs.Repo }}.git
-            cd matrixone
-            git reset --hard ${{ inputs.Ref }}
-            exit
-            EOF
-            exit
-           
-      - name: cn-1 pod prepare data
-        run: |
-            export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config
-            tp_cn_1_pod=$(kubectl -n mo-reg get pod -l matrixorigin.io/component=CNSet -o wide| awk 'NR==3 {print $1}')
-            kubectl exec -it ${tp_cn_1_pod} -n mo-reg -- /bin/sh<<EOF
-            apt-get update
-            apt-get install git vim net-tools mysql-client openjdk-8-jdk -y
-            git clone https://github.com/${{ inputs.Repo }}.git
-            cd matrixone
-            git reset --hard ${{ inputs.Ref }}
-            exit
-            EOF
-            exit
-         
-      - name: Start BVT Test
-        run: |
-           export LC_ALL="C.UTF-8"
-           locale
-           cd $GITHUB_WORKSPACE/mo-tester
-           ./run.sh -n -g -p $GITHUB_WORKSPACE/heads/${{ inputs.Repo }}/test/distributed/cases -s /matrixone/test/distributed/resources 2>&1     
-    
   ssb_benchmark_test:
     if: ${{ always() && !cancelled() }}
     name: SSB BENCHMARK TEST
