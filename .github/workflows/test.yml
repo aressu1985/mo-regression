@@ -49,7 +49,7 @@ jobs:
       - name: Clean EKS ENV
         run: |
           export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config
-          if [ "$(kubectl -n mo-reg get pod|grep "mo-reg-*"|wc -l)" -ne 0 ];then export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci; kubectl -n mo-reg delete -f $GITHUB_WORKSPACE/mo-regression/mo-reg.yaml;sleep 30s;fi
+          if [ "$(kubectl -n mo-reg get pod|grep "mo-reg-*"|wc -l)" -ne 0 ];then export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config; kubectl -n mo-reg delete -f $GITHUB_WORKSPACE/mo-regression/mo-reg.yaml;sleep 30s;fi
 
       - name: ECHO mo-reg.yaml
         run: |
@@ -111,7 +111,7 @@ jobs:
           
       - name: alter mo-tester addr   
         run: |
-           export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci
+           export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config
            export add_ip=$(kubectl -n mo-reg get svc | grep "6001/TCP"|awk '{print $3}')
            sed -i "s/127.0.0.1:6001/${add_ip}:6001/" $GITHUB_WORKSPACE/mo-tester/mo.yml
            sed -i "s/60000/300000/" $GITHUB_WORKSPACE/mo-tester/mo.yml
@@ -119,7 +119,7 @@ jobs:
           
       - name: cn-0 pod prepare data
         run: |
-            export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci
+            export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config
             tp_cn_0_pod=$(kubectl -n mo-reg get pod -l matrixorigin.io/component=CNSet -o wide| awk 'NR==2 {print $1}')
             kubectl exec -it ${tp_cn_0_pod} -n mo-reg -- /bin/sh<<EOF
             apt-get update
@@ -133,7 +133,7 @@ jobs:
            
       - name: cn-1 pod prepare data
         run: |
-            export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci
+            export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config
             tp_cn_1_pod=$(kubectl -n mo-reg get pod -l matrixorigin.io/component=CNSet -o wide| awk 'NR==3 {print $1}')
             kubectl exec -it ${tp_cn_1_pod} -n mo-reg -- /bin/sh<<EOF
             apt-get update
@@ -195,13 +195,13 @@ jobs:
 
       - name: Prepare Kubeconfig
         run: |
-           export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci
-           if [ "$(kubectl get namespaces|grep mo-reg|wc -l)" -eq 0 ];then export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci; kubectl create namespace mo-reg;kubectl -n mo-reg create secret generic aws-regression --from-literal=AWS_ACCESS_KEY_ID=${{ secrets.ACCESSKEY_ID }} --from-literal=AWS_SECRET_ACCESS_KEY=${{ secrets.SECRETACCESS_KEY }};fi 
+           export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config
+           if [ "$(kubectl get namespaces|grep mo-reg|wc -l)" -eq 0 ];then export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config; kubectl create namespace mo-reg;kubectl -n mo-reg create secret generic aws-regression --from-literal=AWS_ACCESS_KEY_ID=${{ secrets.ACCESSKEY_ID }} --from-literal=AWS_SECRET_ACCESS_KEY=${{ secrets.SECRETACCESS_KEY }};fi 
 
       - name: Get MO Cluster Addr
         id: get_mo_addr
         run: |
-          export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci
+          export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config
           mo_svc_ip=$(kubectl -n mo-reg get svc | grep "6001/TCP"|awk '{print $3}')
           echo $mo_svc_ip
           echo ::set-output name=mo_svc_ip::${mo_svc_ip}
@@ -265,13 +265,13 @@ jobs:
 
       - name: Prepare Kubeconfig
         run: |
-           export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci
-           if [ "$(kubectl get namespaces|grep mo-reg|wc -l)" -eq 0 ];then export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci; kubectl create namespace mo-reg;kubectl -n mo-reg create secret generic aws-regression --from-literal=AWS_ACCESS_KEY_ID=${{ secrets.ACCESSKEY_ID }} --from-literal=AWS_SECRET_ACCESS_KEY=${{ secrets.SECRETACCESS_KEY }};fi 
+           export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config
+           if [ "$(kubectl get namespaces|grep mo-reg|wc -l)" -eq 0 ];then export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config; kubectl create namespace mo-reg;kubectl -n mo-reg create secret generic aws-regression --from-literal=AWS_ACCESS_KEY_ID=${{ secrets.ACCESSKEY_ID }} --from-literal=AWS_SECRET_ACCESS_KEY=${{ secrets.SECRETACCESS_KEY }};fi 
 
       - name: Get MO Cluster Addr
         id: get_mo_addr
         run: |
-          export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci
+          export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config
           mo_svc_ip=$(kubectl -n mo-reg get svc | grep "6001/TCP"|awk '{print $3}')
           echo $mo_svc_ip
           echo ::set-output name=mo_svc_ip::${mo_svc_ip}
@@ -338,13 +338,13 @@ jobs:
 
       - name: Prepare Kubeconfig
         run: |
-          export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci
-          if [ "$(kubectl get namespaces|grep mo-reg|wc -l)" -eq 0 ];then export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci; kubectl create namespace mo-reg;kubectl -n mo-reg create secret generic aws-regression --from-literal=AWS_ACCESS_KEY_ID=${{ secrets.ACCESSKEY_ID }} --from-literal=AWS_SECRET_ACCESS_KEY=${{ secrets.SECRETACCESS_KEY }};fi 
+          export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config
+          if [ "$(kubectl get namespaces|grep mo-reg|wc -l)" -eq 0 ];then export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config; kubectl create namespace mo-reg;kubectl -n mo-reg create secret generic aws-regression --from-literal=AWS_ACCESS_KEY_ID=${{ secrets.ACCESSKEY_ID }} --from-literal=AWS_SECRET_ACCESS_KEY=${{ secrets.SECRETACCESS_KEY }};fi 
 
       - name: Get MO Cluster Addr
         id: get_mo_addr
         run: |
-          export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci
+          export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config
           mo_svc_ip=$(kubectl -n mo-reg get svc | grep "6001/TCP"|awk '{print $3}')
           echo $mo_svc_ip
           echo ::set-output name=mo_svc_ip::${mo_svc_ip}
@@ -444,13 +444,13 @@ jobs:
 
       - name: Prepare Kubeconfig
         run: |
-           export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci
-           if [ "$(kubectl get namespaces|grep mo-reg|wc -l)" -eq 0 ];then export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci; kubectl create namespace mo-reg;kubectl -n mo-reg create secret generic aws-regression --from-literal=AWS_ACCESS_KEY_ID=${{ secrets.ACCESSKEY_ID }} --from-literal=AWS_SECRET_ACCESS_KEY=${{ secrets.SECRETACCESS_KEY }};fi 
+           export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config
+           if [ "$(kubectl get namespaces|grep mo-reg|wc -l)" -eq 0 ];then export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config; kubectl create namespace mo-reg;kubectl -n mo-reg create secret generic aws-regression --from-literal=AWS_ACCESS_KEY_ID=${{ secrets.ACCESSKEY_ID }} --from-literal=AWS_SECRET_ACCESS_KEY=${{ secrets.SECRETACCESS_KEY }};fi 
 
       - name: Get MO Cluster Addr
         id: get_mo_addr
         run: |
-          export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci
+          export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config
           mo_svc_ip=$(kubectl -n mo-reg get svc | grep "6001/TCP"|awk '{print $3}')
           echo $mo_svc_ip
           echo ::set-output name=mo_svc_ip::${mo_svc_ip}
@@ -544,13 +544,13 @@ jobs:
 
       - name: Prepare Kubeconfig
         run: |
-           export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci
-           if [ "$(kubectl get namespaces|grep mo-reg|wc -l)" -eq 0 ];then export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci; kubectl create namespace mo-reg;kubectl -n mo-reg create secret generic aws-regression --from-literal=AWS_ACCESS_KEY_ID=${{ secrets.ACCESSKEY_ID }} --from-literal=AWS_SECRET_ACCESS_KEY=${{ secrets.SECRETACCESS_KEY }};fi 
+           export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config
+           if [ "$(kubectl get namespaces|grep mo-reg|wc -l)" -eq 0 ];then export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config; kubectl create namespace mo-reg;kubectl -n mo-reg create secret generic aws-regression --from-literal=AWS_ACCESS_KEY_ID=${{ secrets.ACCESSKEY_ID }} --from-literal=AWS_SECRET_ACCESS_KEY=${{ secrets.SECRETACCESS_KEY }};fi 
 
       - name: Get MO Cluster Addr
         id: get_mo_addr
         run: |
-          export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/eks-ci
+          export KUBECONFIG=$GITHUB_WORKSPACE/mo-regression/config
           mo_svc_ip=$(kubectl -n mo-reg get svc | grep "6001/TCP"|awk '{print $3}')
           echo $mo_svc_ip
           echo ::set-output name=mo_svc_ip::${mo_svc_ip}
